@@ -21,7 +21,10 @@ app = App(token=os.getenv("SLACK_BOT_TOKEN"))
 client = WebClient(token=os.getenv("SLACK_BOT_TOKEN"))
 
 def get_checkpoints_data(client, channel_id, message_ts, cache):
-    """Helper function to get checkpoints data - shared between shortcuts"""
+    """
+    Helper function to get checkpoints data - shared between shortcuts.
+    Fetches all thread replies using pagination to handle threads with >1000 messages.
+    """
     cache_key = f"{channel_id}:{message_ts}"
 
     # join if not in channel
