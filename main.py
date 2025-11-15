@@ -21,7 +21,10 @@ app = App(token=os.getenv("SLACK_BOT_TOKEN"))
 client = WebClient(token=os.getenv("SLACK_BOT_TOKEN"))
 
 def get_checkpoints_data(client, channel_id, message_ts, cache):
-    """Helper function to get checkpoints data - shared between shortcuts"""
+    """
+    Helper function to get checkpoints data - shared between shortcuts.
+    Fetches all thread replies using pagination to handle threads with >1000 messages.
+    """
     cache_key = f"{channel_id}:{message_ts}"
 
     # join if not in channel
@@ -51,11 +54,37 @@ def get_checkpoints_data(client, channel_id, message_ts, cache):
 
     if cache_key in cache:
         replies = cache[cache_key]
+        logging.info(f"Using cached replies for {channel_id}:{message_ts}, count: {len(replies)}")
     else:
-        result = client.conversations_replies(channel=channel_id, ts=message_ts, thread_ts=message_ts)
-        messages = result.get("messages", [])
-        replies = messages[1:] if len(messages) > 1 else []
+        # Fetch all replies with pagination support
+        all_messages = []
+        cursor = None
+        page_count = 0
+        
+        while True:
+            page_count += 1
+            result = client.conversations_replies(
+                channel=channel_id, 
+                ts=message_ts, 
+                thread_ts=message_ts,
+                limit=1000,
+                cursor=cursor
+            )
+            messages = result.get("messages", [])
+            all_messages.extend(messages)
+            logging.info(f"Fetched page {page_count} with {len(messages)} messages (total: {len(all_messages)})")
+            
+            # Check if there are more messages to fetch
+            response_metadata = result.get("response_metadata", {})
+            cursor = response_metadata.get("next_cursor")
+            
+            if not cursor:
+                break
+        
+        # Remove the parent message (first message) to get only replies
+        replies = all_messages[1:] if len(all_messages) > 1 else []
         cache[cache_key] = replies
+        logging.info(f"Fetched total of {len(replies)} replies across {page_count} page(s)")
 
     checkpoints = []
     for i in range(99, len(replies), 100):
