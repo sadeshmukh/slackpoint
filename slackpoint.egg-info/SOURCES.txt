@@ -1,0 +1,8 @@
+README.md
+main.py
+pyproject.toml
+slackpoint.egg-info/PKG-INFO
+slackpoint.egg-info/SOURCES.txt
+slackpoint.egg-info/dependency_links.txt
+slackpoint.egg-info/requires.txt
+slackpoint.egg-info/top_level.txt
