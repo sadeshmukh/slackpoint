@@ -105,8 +105,9 @@ def generate_checkpoints(ack, body, client: WebClient):
     ack()
     try:
         channel_id = body["channel"]["id"]
-        message_ts = body["message"]["ts"]
-        
+        # Use thread_ts if available (for thread replies), otherwise use ts (for parent messages)
+        message_ts = body["message"].get("thread_ts") or body["message"]["ts"]
+
         replies, checkpoints = get_checkpoints_data(client, channel_id, message_ts, cache)
 
         if checkpoints:
@@ -128,8 +129,9 @@ def checkpoints_modal(ack, body, client: WebClient):
     ack()
     try:
         channel_id = body["channel"]["id"]
-        message_ts = body["message"]["ts"]
-        
+        # Use thread_ts if available (for thread replies), otherwise use ts (for parent messages)
+        message_ts = body["message"].get("thread_ts") or body["message"]["ts"]
+
         replies, checkpoints = get_checkpoints_data(client, channel_id, message_ts, cache)
 
         blocks = [
